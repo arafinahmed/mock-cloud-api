@@ -1,0 +1,131 @@
+services:
+  postgres:
+    image: postgres:15
+    platform: linux/arm64
+    hostname: postgres
+    container_name: mock-cloud-postgres
+    environment:
+      POSTGRES_DB: mockcloud
+      POSTGRES_USER: mockcloud
+      POSTGRES_PASSWORD: mockcloud123
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mockcloud"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - mock-cloud-network
+
+  rabbitmq:
+    hostname: mock-cloud-rabbitmq
+    image: rabbitmq:3.11-management
+    platform: linux/arm64
+    container_name: mock-cloud-rabbitmq
+    restart: always
+    volumes:
+      - rmq-data:/var/lib/rabbitmq/mnesia
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ['CMD','rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    environment:
+      - RABBITMQ_DEFAULT_USER=mockcloud
+      - RABBITMQ_DEFAULT_PASS=mockcloud123
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit consumer_timeout 3010000
+    networks:
+      - mock-cloud-network
+
+  redis:
+    image: redis:7
+    platform: linux/arm64
+    hostname: redis
+    container_name: mock-cloud-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - mock-cloud-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    hostname: api
+    container_name: mock-cloud-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://mockcloud:mockcloud123@postgres:5432/mockcloud
+      - RABBITMQ_URL=amqp://mockcloud:mockcloud123@rabbitmq:5672/
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=amqp://mockcloud:mockcloud123@rabbitmq:5672/
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    networks:
+      - mock-cloud-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://mockcloud:mockcloud123@postgres:5432/mockcloud
+      - RABBITMQ_URL=amqp://mockcloud:mockcloud123@rabbitmq:5672/
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=amqp://mockcloud:mockcloud123@rabbitmq:5672/
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+    command: celery -A app.worker.celery_app worker --loglevel=info
+    restart: unless-stopped
+    networks:
+      - mock-cloud-network
+
+networks:
+  mock-cloud-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+  rmq-data:
+  redis_data:
