@@ -15,10 +15,95 @@ import logging
 
 app = FastAPI(
     title="Mock Cloud API",
-    description="A mock cloud backend API for testing and development",
+    description="""
+    ## Mock Cloud API
+    
+    A comprehensive mock cloud backend API for testing, development, and SDK generation.
+    
+    ### Features
+    * **Virtual Machines** - Create, manage, and monitor VMs
+    * **Volumes** - Block storage management with VM attachment
+    * **Security Groups** - Network security and access control
+    * **Environments** - Network isolation with CIDR management
+    * **Async Operations** - Background task processing with Celery
+    
+    ### Use Cases
+    * **Development & Testing** - Mock cloud infrastructure
+    * **SDK Development** - Generate client libraries
+    * **Terraform Providers** - Infrastructure as code testing
+    * **CI/CD Pipelines** - Automated testing environments
+    
+    ### Authentication
+    No authentication required - suitable for development and testing.
+    
+    ### Rate Limiting
+    No rate limiting applied - suitable for load testing.
+    
+    ### SDK Generation
+    This API is designed to work seamlessly with OpenAPI code generators:
+    * Python SDK generation
+    * Go SDK generation  
+    * Node.js SDK generation
+    * Terraform provider development
+    """,
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    servers=[
+        {"url": "http://localhost:8000", "description": "Local Development"},
+        {"url": "https://api.mockcloud.local", "description": "Production (example)"}
+    ],
+    contact={
+        "name": "Mock Cloud API Support",
+        "email": "support@mockcloud.local"
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT"
+    },
+    tags_metadata=[
+        {
+            "name": "environments",
+            "description": "Network environments with CIDR management. Each environment provides network isolation for resources.",
+            "externalDocs": {
+                "description": "Environment Management Guide",
+                "url": "https://docs.mockcloud.local/environments"
+            }
+        },
+        {
+            "name": "vms",
+            "description": "Virtual machine management. Create, monitor, and manage VMs with async provisioning.",
+            "externalDocs": {
+                "description": "VM Management Guide", 
+                "url": "https://docs.mockcloud.local/vms"
+            }
+        },
+        {
+            "name": "volumes",
+            "description": "Block storage volumes that can be attached to VMs. Supports creation, attachment, and lifecycle management.",
+            "externalDocs": {
+                "description": "Volume Management Guide",
+                "url": "https://docs.mockcloud.local/volumes"
+            }
+        },
+        {
+            "name": "security-groups",
+            "description": "Network security groups for controlling access to resources. Define ingress and egress rules.",
+            "externalDocs": {
+                "description": "Security Group Guide",
+                "url": "https://docs.mockcloud.local/security-groups"
+            }
+        },
+        {
+            "name": "tasks",
+            "description": "Background task management and monitoring. Track async operations like VM and volume provisioning.",
+            "externalDocs": {
+                "description": "Task Management Guide",
+                "url": "https://docs.mockcloud.local/tasks"
+            }
+        }
+    ]
 )
 
 # Add CORS middleware

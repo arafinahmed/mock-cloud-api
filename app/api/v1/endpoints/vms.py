@@ -21,7 +21,7 @@ def create_vm(
             task_id=result["task_id"],
             status="started",
             message=result["message"],
-            resource_id=result["resource_id"],
+            id=result["id"],
             resource_type=result["resource_type"]
         )
     except MockCloudException as e:

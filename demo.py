@@ -1,203 +1,276 @@
 #!/usr/bin/env python3
 """
-Demo script for Mock Cloud API
-Creates sample resources and demonstrates the API functionality
+Mock Cloud API Demo Script
+
+This script demonstrates the API functionality and shows how to use
+the generated SDKs for programmatic resource management.
 """
 
 import requests
-import time
 import json
+import time
+from typing import Dict, Any
 
-BASE_URL = "http://localhost:8000/api/v1"
+# API Configuration
+API_BASE_URL = "http://localhost:8000"
+API_VERSION = "v1"
 
-def wait_for_service():
-    """Wait for the API service to be ready"""
-    print("⏳ Waiting for API service to be ready...")
-    max_attempts = 30
-    for attempt in range(max_attempts):
-        try:
-            response = requests.get(f"{BASE_URL.replace('/api/v1', '')}/health")
-            if response.status_code == 200:
-                print("✅ API service is ready!")
-                return True
-        except requests.exceptions.ConnectionError:
-            pass
+class MockCloudAPIClient:
+    """Simple client for the Mock Cloud API"""
+    
+    def __init__(self, base_url: str = API_BASE_URL):
+        self.base_url = base_url
+        self.session = requests.Session()
+        self.session.headers.update({
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        })
+    
+    def _make_request(self, method: str, endpoint: str, data: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Make HTTP request to the API"""
+        url = f"{self.base_url}/api/{API_VERSION}/{endpoint}"
         
-        if attempt < max_attempts - 1:
-            time.sleep(2)
-            print(f"   Attempt {attempt + 1}/{max_attempts}...")
+        try:
+            if method.upper() == 'GET':
+                response = self.session.get(url)
+            elif method.upper() == 'POST':
+                response = self.session.post(url, json=data)
+            elif method.upper() == 'DELETE':
+                response = self.session.delete(url)
+            else:
+                raise ValueError(f"Unsupported HTTP method: {method}")
+            
+            response.raise_for_status()
+            return response.json() if response.content else {}
+            
+        except requests.exceptions.RequestException as e:
+            print(f"❌ API request failed: {e}")
+            return {}
     
-    print("❌ API service is not responding")
-    return False
+    def create_environment(self, name: str, network_cidr: str, description: str = "") -> Dict[str, Any]:
+        """Create a new environment"""
+        data = {
+            "name": name,
+            "network_cidr": network_cidr,
+            "description": description
+        }
+        return self._make_request('POST', 'environments/', data)
+    
+    def get_environment(self, env_id: int) -> Dict[str, Any]:
+        """Get environment by ID"""
+        return self._make_request('GET', f'environments/{env_id}')
+    
+    def list_environments(self) -> Dict[str, Any]:
+        """List all environments"""
+        return self._make_request('GET', 'environments/')
+    
+    def create_vm(self, name: str, instance_type: str, environment_id: int) -> Dict[str, Any]:
+        """Create a new VM"""
+        data = {
+            "name": name,
+            "instance_type": instance_type,
+            "environment_id": environment_id
+        }
+        return self._make_request('POST', 'vms/', data)
+    
+    def get_vm(self, vm_id: int) -> Dict[str, Any]:
+        """Get VM by ID"""
+        return self._make_request('GET', f'vms/{vm_id}')
+    
+    def list_vms(self) -> Dict[str, Any]:
+        """List all VMs"""
+        return self._make_request('GET', 'vms/')
+    
+    def create_volume(self, name: str, size_gb: int, environment_id: int) -> Dict[str, Any]:
+        """Create a new volume"""
+        data = {
+            "name": name,
+            "size_gb": size_gb,
+            "environment_id": environment_id
+        }
+        return self._make_request('POST', 'volumes/', data)
+    
+    def get_volume(self, volume_id: int) -> Dict[str, Any]:
+        """Get volume by ID"""
+        return self._make_request('GET', f'volumes/{volume_id}')
+    
+    def list_volumes(self) -> Dict[str, Any]:
+        """List all volumes"""
+        return self._make_request('GET', 'volumes/')
+    
+    def create_security_group(self, name: str, description: str = "") -> Dict[str, Any]:
+        """Create a new security group"""
+        data = {
+            "name": name,
+            "description": description
+        }
+        return self._make_request('POST', 'security-groups/', data)
+    
+    def get_security_group(self, sg_id: int) -> Dict[str, Any]:
+        """Get security group by ID"""
+        return self._make_request('GET', f'security-groups/{sg_id}')
+    
+    def list_security_groups(self) -> Dict[str, Any]:
+        """List all security groups"""
+        return self._make_request('GET', 'security-groups/')
 
-def create_environment(name, network_cidr, description):
-    """Create an environment"""
-    data = {
-        "name": name,
-        "network_cidr": network_cidr,
-        "description": description
-    }
+def print_section(title: str):
+    """Print a formatted section header"""
+    print(f"\n{'='*60}")
+    print(f" {title}")
+    print(f"{'='*60}")
+
+def print_resource(title: str, resource: Dict[str, Any]):
+    """Print resource information"""
+    print(f"\n📋 {title}")
+    print(f"   ID: {resource.get('id', 'N/A')}")
+    print(f"   Name: {resource.get('name', 'N/A')}")
+    print(f"   Status: {resource.get('status', 'N/A')}")
+    if 'created_at' in resource:
+        print(f"   Created: {resource['created_at']}")
+    if 'network_cidr' in resource:
+        print(f"   Network: {resource['network_cidr']}")
+    if 'instance_type' in resource:
+        print(f"   Type: {resource['instance_type']}")
+    if 'size_gb' in resource:
+        print(f"   Size: {resource['size_gb']} GB")
+
+def demo_api_functionality():
+    """Demonstrate the API functionality"""
     
-    response = requests.post(f"{BASE_URL}/environments/", json=data)
-    if response.status_code == 201:
-        print(f"✅ Created environment: {name}")
-        return response.json()
+    print_section("🚀 Mock Cloud API Demo")
+    print("This demo showcases the Mock Cloud API functionality")
+    print("Make sure the API is running at http://localhost:8000")
+    
+    # Initialize API client
+    client = MockCloudAPIClient()
+    
+    # Test API health
+    try:
+        health_response = requests.get(f"{API_BASE_URL}/health")
+        if health_response.status_code == 200:
+            print("✅ API is healthy and running")
+        else:
+            print("❌ API health check failed")
+            return
+    except requests.exceptions.ConnectionError:
+        print("❌ Cannot connect to API. Make sure it's running at http://localhost:8000")
+        return
+    
+    # Create Environment
+    print_section("🌍 Creating Environment")
+    env_data = client.create_environment(
+        name="demo-env",
+        network_cidr="10.200.0.0/16",
+        description="Demo environment for testing"
+    )
+    
+    if env_data:
+        print_resource("Environment Created", env_data)
+        environment_id = env_data['id']
     else:
-        print(f"❌ Failed to create environment {name}: {response.text}")
-        return None
-
-def create_security_group(name, description, rules):
-    """Create a security group"""
-    data = {
-        "name": name,
-        "description": description,
-        "rules": json.dumps(rules)
-    }
+        print("❌ Failed to create environment")
+        return
     
-    response = requests.post(f"{BASE_URL}/security-groups/", json=data)
-    if response.status_code == 201:
-        print(f"✅ Created security group: {name}")
-        return response.json()
+    # Create Security Group
+    print_section("🔒 Creating Security Group")
+    sg_data = client.create_security_group(
+        name="demo-sg",
+        description="Demo security group"
+    )
+    
+    if sg_data:
+        print_resource("Security Group Created", sg_data)
+        security_group_id = sg_data['id']
     else:
-        print(f"❌ Failed to create security group {name}: {response.text}")
-        return None
-
-def create_vm(name, instance_type, environment_id, security_group_id):
-    """Create a VM"""
-    data = {
-        "name": name,
-        "instance_type": instance_type,
-        "environment_id": environment_id,
-        "security_group_id": security_group_id
-    }
+        print("❌ Failed to create security group")
+        return
     
-    response = requests.post(f"{BASE_URL}/vms/", json=data)
-    if response.status_code == 200:
-        print(f"✅ Started VM creation: {name} (Task ID: {response.json()['task_id']})")
-        return response.json()
+    # Create VM
+    print_section("🖥️  Creating Virtual Machine")
+    vm_data = client.create_vm(
+        name="demo-vm",
+        instance_type="t3.micro",
+        environment_id=environment_id
+    )
+    
+    if vm_data:
+        print_resource("VM Creation Started", vm_data)
+        vm_id = vm_data.get('id')
+        task_id = vm_data.get('task_id')
+        print(f"   Task ID: {task_id}")
+        print("   Note: VM creation is async and takes 30-60 seconds")
     else:
-        print(f"❌ Failed to start VM creation {name}: {response.text}")
-        return None
-
-def create_volume(name, size_gb, environment_id):
-    """Create a volume"""
-    data = {
-        "name": name,
-        "size_gb": size_gb,
-        "environment_id": environment_id
-    }
+        print("❌ Failed to create VM")
+        return
     
-    response = requests.post(f"{BASE_URL}/volumes/", json=data)
-    if response.status_code == 200:
-        print(f"✅ Started volume creation: {name} (Task ID: {response.json()['task_id']})")
-        return response.json()
+    # Create Volume
+    print_section("💾 Creating Volume")
+    volume_data = client.create_volume(
+        name="demo-volume",
+        size_gb=20,
+        environment_id=environment_id
+    )
+    
+    if volume_data:
+        print_resource("Volume Creation Started", volume_data)
+        volume_id = volume_data.get('id')
+        task_id = volume_data.get('task_id')
+        print(f"   Task ID: {task_id}")
+        print("   Note: Volume creation is async and takes 30-60 seconds")
     else:
-        print(f"❌ Failed to start volume creation {name}: {response.text}")
-        return None
-
-def list_resources():
-    """List all resources"""
-    print("\n📋 Current Resources:")
+        print("❌ Failed to create volume")
+        return
     
-    # List environments
-    response = requests.get(f"{BASE_URL}/environments/")
-    if response.status_code == 200:
-        envs = response.json()
-        print(f"   Environments: {envs['total']}")
-        for env in envs['environments']:
-            print(f"     - {env['name']} ({env['network_cidr']})")
+    # List Resources
+    print_section("📋 Listing Resources")
     
-    # List security groups
-    response = requests.get(f"{BASE_URL}/security-groups/")
-    if response.status_code == 200:
-        sgs = response.json()
-        print(f"   Security Groups: {sgs['total']}")
-        for sg in sgs['security_groups']:
-            print(f"     - {sg['name']}")
+    print("\n🌍 Environments:")
+    environments = client.list_environments()
+    if environments and 'environments' in environments:
+        for env in environments['environments']:
+            print(f"   - {env['name']} (ID: {env['id']}) - {env['network_cidr']}")
     
-    # List VMs
-    response = requests.get(f"{BASE_URL}/vms/")
-    if response.status_code == 200:
-        vms = response.json()
-        print(f"   VMs: {vms['total']}")
+    print("\n🔒 Security Groups:")
+    security_groups = client.list_security_groups()
+    if security_groups and 'security_groups' in security_groups:
+        for sg in security_groups['security_groups']:
+            print(f"   - {sg['name']} (ID: {sg['id']}) - {sg['description']}")
+    
+    print("\n🖥️  Virtual Machines:")
+    vms = client.list_vms()
+    if vms and 'vms' in vms:
         for vm in vms['vms']:
-            print(f"     - {vm['name']} ({vm['status']}) - {vm['resource_status']}")
+            print(f"   - {vm['name']} (ID: {vm['id']}) - {vm['status']} - {vm['instance_type']}")
     
-    # List volumes
-    response = requests.get(f"{BASE_URL}/volumes/")
-    if response.status_code == 200:
-        volumes = response.json()
-        print(f"   Volumes: {volumes['total']}")
+    print("\n💾 Volumes:")
+    volumes = client.list_volumes()
+    if volumes and 'volumes' in volumes:
         for volume in volumes['volumes']:
-            print(f"     - {volume['name']} ({volume['status']}) - {volume['resource_status']}")
-
-def main():
-    """Main demo function"""
-    print("🚀 Mock Cloud API Demo")
-    print("=" * 50)
+            print(f"   - {volume['name']} (ID: {volume['id']}) - {volume['status']} - {volume['size_gb']} GB")
     
-    # Wait for service to be ready
-    if not wait_for_service():
-        return
+    # SDK Generation Info
+    print_section("🔧 SDK Generation")
+    print("To generate SDKs for Python, Go, and Node.js:")
+    print("\n1. Export OpenAPI specification:")
+    print("   python scripts/export_openapi.py")
+    print("\n2. Generate SDKs:")
+    print("   make generate-all-sdks")
+    print("\n3. Or generate individually:")
+    print("   make generate-sdk-python")
+    print("   make generate-sdk-go")
+    print("   make generate-sdk-nodejs")
     
-    print("\n🔧 Creating sample resources...")
+    print("\n📚 API Documentation:")
+    print(f"   - Swagger UI: {API_BASE_URL}/docs")
+    print(f"   - ReDoc: {API_BASE_URL}/redoc")
+    print(f"   - OpenAPI JSON: {API_BASE_URL}/openapi.json")
     
-    # Create environments
-    env1 = create_environment("demo-env", "10.100.0.0/16", "Demo environment for testing")
-    env2 = create_environment("test-env", "10.101.0.0/16", "Test environment")
-    
-    if not env1:
-        print("❌ Cannot continue without environment")
-        return
-    
-    # Create security groups
-    sg1 = create_security_group("demo-sg", "Demo security group", {
-        "inbound": [
-            {"protocol": "tcp", "port": 22, "source": "0.0.0.0/0"},
-            {"protocol": "tcp", "port": 80, "source": "0.0.0.0/0"}
-        ],
-        "outbound": [
-            {"protocol": "all", "port": "all", "destination": "0.0.0.0/0"}
-        ]
-    })
-    
-    sg2 = create_security_group("web-sg", "Web server security group", {
-        "inbound": [
-            {"protocol": "tcp", "port": 80, "source": "0.0.0.0/0"},
-            {"protocol": "tcp", "port": 443, "source": "0.0.0.0/0"}
-        ],
-        "outbound": [
-            {"protocol": "all", "port": "all", "destination": "0.0.0.0/0"}
-        ]
-    })
-    
-    if not sg1:
-        print("❌ Cannot continue without security group")
-        return
-    
-    # Create VMs
-    vm1 = create_vm("demo-vm-1", "t3.micro", env1["id"], sg1["id"])
-    vm2 = create_vm("demo-vm-2", "t3.small", env1["id"], sg2["id"])
-    vm3 = create_vm("test-vm", "t3.medium", env2["id"] if env2 else env1["id"], sg1["id"])
-    
-    # Create volumes
-    vol1 = create_volume("demo-vol-1", 20, env1["id"])
-    vol2 = create_volume("demo-vol-2", 50, env1["id"])
-    vol3 = create_volume("test-vol", 100, env2["id"] if env2 else env1["id"])
-    
-    print("\n⏳ Waiting for resources to be created...")
-    print("   (This may take 30-60 seconds per resource)")
-    
-    # Wait a bit and then show current status
-    time.sleep(5)
-    list_resources()
-    
-    print("\n🎉 Demo completed!")
-    print("\n💡 Tips:")
-    print("   - Check the API docs at http://localhost:8000/docs")
-    print("   - Monitor worker logs: docker-compose logs -f worker")
-    print("   - Some resources may fail randomly (1/10 chance)")
-    print("   - Resource creation takes 30-60 seconds")
+    print("\n🎯 Next Steps:")
+    print("   1. Wait for VM and Volume creation to complete")
+    print("   2. Generate SDKs using the commands above")
+    print("   3. Build your Terraform provider")
+    print("   4. Integrate with your CI/CD pipelines")
 
 if __name__ == "__main__":
-    main()
+    demo_api_functionality()

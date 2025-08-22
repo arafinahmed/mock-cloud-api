@@ -96,7 +96,7 @@ class TaskResponse(BaseModel):
     task_id: str
     status: str
     message: str
-    resource_id: Optional[int] = None
+    id: Optional[int] = None
     resource_type: Optional[str] = None
 
 # Resource creation response schemas

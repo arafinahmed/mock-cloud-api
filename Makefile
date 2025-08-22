@@ -69,3 +69,31 @@ dev-setup: ## Setup development environment
 
 status: ## Show service status
 	docker-compose ps
+
+# SDK Generation
+export-openapi: ## Export OpenAPI specification
+	python scripts/export_openapi.py
+
+generate-sdk-python: ## Generate Python SDK
+	@echo "Generating Python SDK..."
+	@mkdir -p sdk
+	openapi-generator generate -i openapi/api.json -g python -o sdk/python --package-name mockcloud
+
+generate-sdk-go: ## Generate Go SDK
+	@echo "Generating Go SDK..."
+	@mkdir -p sdk
+	openapi-generator generate -i openapi/api.json -g go -o sdk/go --package-name github.com/mock-cloud/mock-cloud-api-go
+
+generate-sdk-nodejs: ## Generate Node.js SDK
+	@echo "Generating Node.js SDK..."
+	@mkdir -p sdk
+	openapi-generator generate -i openapi/api.json -g javascript -o sdk/nodejs --package-name @mock-cloud/mock-cloud-api
+
+generate-all-sdks: export-openapi generate-sdk-python generate-sdk-go generate-sdk-nodejs ## Generate all SDKs
+	@echo "All SDKs generated successfully!"
+	@echo "Python SDK: sdk/python/"
+	@echo "Go SDK: sdk/go/"
+	@echo "Node.js SDK: sdk/nodejs/"
+
+install-openapi-generator: ## Install OpenAPI Generator CLI
+	npm install -g @openapitools/openapi-generator-cli

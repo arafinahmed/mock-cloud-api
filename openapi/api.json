@@ -1,0 +1,1509 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Mock Cloud API",
+    "description": "\n    ## Mock Cloud API\n    \n    A comprehensive mock cloud backend API for testing, development, and SDK generation.\n    \n    ### Features\n    * **Virtual Machines** - Create, manage, and monitor VMs\n    * **Volumes** - Block storage management with VM attachment\n    * **Security Groups** - Network security and access control\n    * **Environments** - Network isolation with CIDR management\n    * **Async Operations** - Background task processing with Celery\n    \n    ### Use Cases\n    * **Development & Testing** - Mock cloud infrastructure\n    * **SDK Development** - Generate client libraries\n    * **Terraform Providers** - Infrastructure as code testing\n    * **CI/CD Pipelines** - Automated testing environments\n    \n    ### Authentication\n    No authentication required - suitable for development and testing.\n    \n    ### Rate Limiting\n    No rate limiting applied - suitable for load testing.\n    \n    ### SDK Generation\n    This API is designed to work seamlessly with OpenAPI code generators:\n    * Python SDK generation\n    * Go SDK generation  \n    * Node.js SDK generation\n    * Terraform provider development\n    ",
+    "contact": {
+      "name": "Mock Cloud API Support",
+      "email": "support@mockcloud.local"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local Development"
+    },
+    {
+      "url": "https://api.mockcloud.local",
+      "description": "Production (example)"
+    }
+  ],
+  "paths": {
+    "/api/v1/environments/": {
+      "post": {
+        "tags": [
+          "environments",
+          "environments"
+        ],
+        "summary": "Create Environment",
+        "description": "Create a new network environment.\n\nCreates an isolated network environment with a specified CIDR block.\nAll resources (VMs, volumes) created within this environment will be\nnetwork-isolated from other environments.\n\n**Use Cases:**\n* Development environment isolation\n* Multi-tenant infrastructure\n* Network security testing\n\n**Example:**\n```json\n{\n  \"name\": \"prod-web\",\n  \"network_cidr\": \"10.100.0.0/16\",\n  \"description\": \"Production web environment\"\n}\n```",
+        "operationId": "create_environment_api_v1_environments__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnvironmentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvironmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "environments",
+          "environments"
+        ],
+        "summary": "Get All Environments",
+        "description": "Get all environments with pagination.\n\nRetrieves a paginated list of all network environments.\nUseful for listing available environments and implementing\npagination in client applications.\n\n**Parameters:**\n* `skip`: Number of environments to skip (for pagination)\n* `limit`: Maximum number of environments to return\n\n**Returns:**\nPaginated list of environments with total count",
+        "operationId": "get_all_environments_api_v1_environments__get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvironmentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/environments/{environment_id}": {
+      "get": {
+        "tags": [
+          "environments",
+          "environments"
+        ],
+        "summary": "Get Environment",
+        "description": "Get a specific environment by ID.\n\nRetrieves detailed information about a network environment including\nits CIDR block, creation time, and associated resources.\n\n**Parameters:**\n* `environment_id`: Unique identifier for the environment\n\n**Returns:**\nComplete environment information with metadata",
+        "operationId": "get_environment_api_v1_environments__environment_id__get",
+        "parameters": [
+          {
+            "name": "environment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvironmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "environments",
+          "environments"
+        ],
+        "summary": "Delete Environment",
+        "description": "Delete an environment by ID.\n\nRemoves a network environment and all its associated resources.\nThis operation is irreversible and will affect all VMs and volumes\nwithin the environment.\n\n**Parameters:**\n* `environment_id`: Unique identifier for the environment to delete\n\n**Returns:**\nSuccess message confirming deletion\n\n**Note:**\nThis operation will fail if there are active resources in the environment.",
+        "operationId": "delete_environment_api_v1_environments__environment_id__delete",
+        "parameters": [
+          {
+            "name": "environment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/security-groups/": {
+      "post": {
+        "tags": [
+          "security-groups"
+        ],
+        "summary": "Create Security Group",
+        "description": "Create a new security group",
+        "operationId": "create_security_group_api_v1_security_groups__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecurityGroupCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityGroupResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "security-groups"
+        ],
+        "summary": "Get All Security Groups",
+        "description": "Get all security groups",
+        "operationId": "get_all_security_groups_api_v1_security_groups__get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityGroupListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/security-groups/{security_group_id}": {
+      "get": {
+        "tags": [
+          "security-groups"
+        ],
+        "summary": "Get Security Group",
+        "description": "Get security group by ID",
+        "operationId": "get_security_group_api_v1_security_groups__security_group_id__get",
+        "parameters": [
+          {
+            "name": "security_group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Security Group Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityGroupResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "security-groups"
+        ],
+        "summary": "Delete Security Group",
+        "description": "Delete security group",
+        "operationId": "delete_security_group_api_v1_security_groups__security_group_id__delete",
+        "parameters": [
+          {
+            "name": "security_group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Security Group Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vms/": {
+      "post": {
+        "tags": [
+          "vms"
+        ],
+        "summary": "Create Vm",
+        "description": "Create a new VM",
+        "operationId": "create_vm_api_v1_vms__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VMCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "vms"
+        ],
+        "summary": "Get All Vms",
+        "description": "Get all VMs",
+        "operationId": "get_all_vms_api_v1_vms__get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VMListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vms/{vm_id}": {
+      "get": {
+        "tags": [
+          "vms"
+        ],
+        "summary": "Get Vm",
+        "description": "Get VM by ID",
+        "operationId": "get_vm_api_v1_vms__vm_id__get",
+        "parameters": [
+          {
+            "name": "vm_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Vm Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VMResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "vms"
+        ],
+        "summary": "Delete Vm",
+        "description": "Delete VM",
+        "operationId": "delete_vm_api_v1_vms__vm_id__delete",
+        "parameters": [
+          {
+            "name": "vm_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Vm Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/volumes/": {
+      "post": {
+        "tags": [
+          "volumes",
+          "volumes"
+        ],
+        "summary": "Create Volume",
+        "description": "Create a new volume.\n\nCreates a block storage volume that can be attached to VMs.\nVolume creation is asynchronous and takes 30-60 seconds.\n\n**Parameters:**\n* `name`: Unique name for the volume\n* `size_gb`: Size in gigabytes\n* `environment_id`: ID of the environment to create the volume in\n\n**Returns:**\nTask response with volume ID and task tracking information",
+        "operationId": "create_volume_api_v1_volumes__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VolumeCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "volumes",
+          "volumes"
+        ],
+        "summary": "Get All Volumes",
+        "description": "Get all volumes with pagination.\n\nRetrieves a paginated list of all volumes.\nUseful for listing available volumes and implementing\npagination in client applications.\n\n**Parameters:**\n* `skip`: Number of volumes to skip (for pagination)\n* `limit`: Maximum number of volumes to return\n\n**Returns:**\nPaginated list of volumes with total count",
+        "operationId": "get_all_volumes_api_v1_volumes__get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VolumeListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/volumes/{volume_id}": {
+      "get": {
+        "tags": [
+          "volumes",
+          "volumes"
+        ],
+        "summary": "Get Volume",
+        "description": "Get a specific volume by ID.\n\nRetrieves detailed information about a volume including\nits size, status, and attachment information.\n\n**Parameters:**\n* `volume_id`: Unique identifier for the volume\n\n**Returns:**\nComplete volume information with metadata",
+        "operationId": "get_volume_api_v1_volumes__volume_id__get",
+        "parameters": [
+          {
+            "name": "volume_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Volume Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VolumeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "volumes",
+          "volumes"
+        ],
+        "summary": "Delete Volume",
+        "description": "Delete a volume by ID.\n\nStarts the deletion process for a volume.\nVolume deletion is asynchronous and may take time\nif the volume is currently attached to a VM.\n\n**Parameters:**\n* `volume_id`: Unique identifier for the volume to delete\n\n**Returns:**\nTask response with deletion task information\n\n**Note:**\nThis operation will fail if the volume is currently attached to a VM.",
+        "operationId": "delete_volume_api_v1_volumes__volume_id__delete",
+        "parameters": [
+          {
+            "name": "volume_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Volume Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/volumes/{volume_id}/attach/{vm_id}": {
+      "post": {
+        "tags": [
+          "volumes",
+          "volumes"
+        ],
+        "summary": "Attach Volume To Vm",
+        "description": "Attach a volume to a VM.\n\nAttaches a volume to a specific VM, making it available\nfor use by the VM. The volume status will change to 'in_use'.\n\n**Parameters:**\n* `volume_id`: Unique identifier for the volume\n* `vm_id`: Unique identifier for the VM to attach to\n\n**Returns:**\nSuccess message confirming attachment\n\n**Note:**\nA volume can only be attached to one VM at a time.",
+        "operationId": "attach_volume_to_vm_api_v1_volumes__volume_id__attach__vm_id__post",
+        "parameters": [
+          {
+            "name": "volume_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Volume Id"
+            }
+          },
+          {
+            "name": "vm_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Vm Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/volumes/{volume_id}/detach": {
+      "post": {
+        "tags": [
+          "volumes",
+          "volumes"
+        ],
+        "summary": "Detach Volume From Vm",
+        "description": "Detach a volume from its current VM.\n\nDetaches a volume from the VM it's currently attached to.\nThe volume status will change to 'available' and can be\nattached to another VM.\n\n**Parameters:**\n* `volume_id`: Unique identifier for the volume to detach\n\n**Returns:**\nSuccess message confirming detachment",
+        "operationId": "detach_volume_from_vm_api_v1_volumes__volume_id__detach_post",
+        "parameters": [
+          {
+            "name": "volume_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Volume Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/db": {
+      "get": {
+        "summary": "Database Health Check",
+        "operationId": "database_health_check_health_db_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EnvironmentCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "network_cidr": {
+            "type": "string",
+            "title": "Network Cidr",
+            "default": "10.0.0.0/16"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "EnvironmentCreate"
+      },
+      "EnvironmentListResponse": {
+        "properties": {
+          "environments": {
+            "items": {
+              "$ref": "#/components/schemas/EnvironmentResponse"
+            },
+            "type": "array",
+            "title": "Environments"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "environments",
+          "total"
+        ],
+        "title": "EnvironmentListResponse"
+      },
+      "EnvironmentResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "network_cidr": {
+            "type": "string",
+            "title": "Network Cidr",
+            "default": "10.0.0.0/16"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "id",
+          "created_at"
+        ],
+        "title": "EnvironmentResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ResourceStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "creating",
+          "active",
+          "failed",
+          "deleting",
+          "deleted"
+        ],
+        "title": "ResourceStatus"
+      },
+      "SecurityGroupCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "rules": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "SecurityGroupCreate"
+      },
+      "SecurityGroupListResponse": {
+        "properties": {
+          "security_groups": {
+            "items": {
+              "$ref": "#/components/schemas/SecurityGroupResponse"
+            },
+            "type": "array",
+            "title": "Security Groups"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "security_groups",
+          "total"
+        ],
+        "title": "SecurityGroupListResponse"
+      },
+      "SecurityGroupResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "rules": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rules"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "id",
+          "created_at"
+        ],
+        "title": "SecurityGroupResponse"
+      },
+      "TaskResponse": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "resource_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "status",
+          "message"
+        ],
+        "title": "TaskResponse"
+      },
+      "VMCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "instance_type": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Instance Type"
+          },
+          "environment_id": {
+            "type": "integer",
+            "title": "Environment Id"
+          },
+          "security_group_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Security Group Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "instance_type",
+          "environment_id"
+        ],
+        "title": "VMCreate"
+      },
+      "VMListResponse": {
+        "properties": {
+          "vms": {
+            "items": {
+              "$ref": "#/components/schemas/VMResponse"
+            },
+            "type": "array",
+            "title": "Vms"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "vms",
+          "total"
+        ],
+        "title": "VMListResponse"
+      },
+      "VMResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "instance_type": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Instance Type"
+          },
+          "environment_id": {
+            "type": "integer",
+            "title": "Environment Id"
+          },
+          "security_group_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Security Group Id"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VMStatus"
+          },
+          "resource_status": {
+            "$ref": "#/components/schemas/ResourceStatus"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Address"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "instance_type",
+          "environment_id",
+          "id",
+          "status",
+          "resource_status",
+          "created_at"
+        ],
+        "title": "VMResponse"
+      },
+      "VMStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "starting",
+          "running",
+          "stopped",
+          "failed",
+          "deleting",
+          "deleted"
+        ],
+        "title": "VMStatus"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VolumeCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "size_gb": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Size Gb"
+          },
+          "environment_id": {
+            "type": "integer",
+            "title": "Environment Id"
+          },
+          "vm_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vm Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "size_gb",
+          "environment_id"
+        ],
+        "title": "VolumeCreate"
+      },
+      "VolumeListResponse": {
+        "properties": {
+          "volumes": {
+            "items": {
+              "$ref": "#/components/schemas/VolumeResponse"
+            },
+            "type": "array",
+            "title": "Volumes"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "volumes",
+          "total"
+        ],
+        "title": "VolumeListResponse"
+      },
+      "VolumeResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "size_gb": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Size Gb"
+          },
+          "environment_id": {
+            "type": "integer",
+            "title": "Environment Id"
+          },
+          "vm_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vm Id"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VolumeStatus"
+          },
+          "resource_status": {
+            "$ref": "#/components/schemas/ResourceStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "size_gb",
+          "environment_id",
+          "id",
+          "status",
+          "resource_status",
+          "created_at"
+        ],
+        "title": "VolumeResponse"
+      },
+      "VolumeStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "creating",
+          "available",
+          "in_use",
+          "failed",
+          "deleting",
+          "deleted"
+        ],
+        "title": "VolumeStatus"
+      }
+    }
+  }
+}

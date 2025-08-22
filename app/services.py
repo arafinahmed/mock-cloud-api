@@ -80,7 +80,7 @@ class VMService:
             "vm": db_vm,
             "task_id": task.id,
             "message": "VM creation started",
-            "resource_id": db_vm.id,
+            "id": db_vm.id,
             "resource_type": "vm"
         }
     
@@ -128,7 +128,7 @@ class VolumeService:
             "volume": db_volume,
             "task_id": task.id,
             "message": "Volume creation started",
-            "resource_id": db_volume.id,
+            "id": db_volume.id,
             "resource_type": "volume"
         }
     
